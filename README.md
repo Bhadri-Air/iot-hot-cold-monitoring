@@ -88,33 +88,6 @@ curl "http://localhost:8000/history/plant-1?hours=24"
 curl "http://localhost:8000/history/plant-1?metric=temperature&hours=6"
 ```
 
-## Design decisions
-
-### Why dual-write instead of a longer Redis TTL?
-
-Redis TimeSeries is excellent for **sub-millisecond recent reads** and built-in retention/downsampling. Stretching Redis to hold 7 days of high-cardinality IoT points is the wrong tool: memory cost grows linearly, and long range scans are not what Redis is optimized for.
-
-InfluxDB stores time series in a **columnar, compressed** layout designed for “show me pressure over the last 7 days.” Dual-write keeps each system doing what it is good at:
-
-- Dashboard “live/current” → Redis (`TS.GET`)
-- Historical trend lines → InfluxDB (Flux `range`)
-
-A single store with a long TTL would either waste RAM (Redis) or add latency to hot reads (Influx-only).
-
-### Retention: Redis vs InfluxDB
-
-- **Redis**: `TS.CREATE` / `TS.ADD` with `RETENTION 3600000` (1 hour). Older samples are evicted automatically by the TimeSeries module — no cron job required.
-- **InfluxDB**: demo bucket keeps data indefinitely. In production you would attach a **bucket retention period** or Influx tasks (downsample + delete), analogous to Redis retention but at cold-storage scale.
-
-### Key Redis / Influx concepts to explain in interviews
-
-| Concept | Where | Notes |
-|---------|--------|------|
-| `TS.CREATE` / `TS.ADD` | Redis | Key pattern `sensor:{id}:{metric}`; labels `sensor_id`, `metric` |
-| `TS.GET` / `TS.RANGE` | Redis | Hot latest vs short-window range |
-| Measurement / tag / field | Influx | measurement = metric name; tag = `sensor_id`; field = `value` |
-| Flux `from() \|> range() \|> filter()` | Influx / Grafana | Cold historical queries |
-
 ## Project layout
 
 ```
