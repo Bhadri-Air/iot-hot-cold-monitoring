@@ -107,14 +107,6 @@ curl "http://localhost:8000/history/plant-1?metric=temperature&hours=6"
         └── iot-dashboard.json
 ```
 
-## What this demo deliberately skips
-
-- Auth / security hardening
-- Kafka (or other) message bus between simulator and ingestion
-- Kubernetes / Nginx
-- Custom React dashboard (Grafana is enough for visual payoff)
-- Redis downsampling rules / Influx continuous tasks beyond the default bucket
-
 ## Stop / reset
 
 ```bash
